@@ -252,14 +252,43 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     """
 
     def getAction(self, gameState):
-        """
-          Returns the expectimax action using self.depth and self.evaluationFunction
+        def terminalTest(gameState, depth):
+            return gameState.isWin() or gameState.isLose() or depth == 0
 
-          All ghosts should be modeled as choosing uniformly at random from their
-          legal moves.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def utility(gameState):
+            return self.evaluationFunction(gameState)
+
+        def result(gameState, agent, action):
+            return gameState.generateSuccessor(agent, action)
+
+        def max_value(gameState, agent, depth):
+            if terminalTest(gameState, depth): return utility(gameState)
+
+            v = -sys.maxint
+            for a in gameState.getLegalActions(agent):
+               v = max(v, min_value(result(gameState, agent, a), 1, depth))
+            return v
+
+        def min_value(gameState, agent, depth):
+            if terminalTest(gameState, depth): return utility(gameState)
+
+            v = []
+            for a in gameState.getLegalActions(agent):
+               if (agent == gameState.getNumAgents()-1):
+                   v.append(max_value(result(gameState, agent, a), 0, depth-1))
+               else:
+                   v.append(min_value(result(gameState, agent, a), agent+1, depth))
+
+            return sum(v) / float(len(v))
+
+        v = -sys.maxint
+        actions = []
+        for a in gameState.getLegalActions(0):
+            u = min_value(result(gameState, 0, a), 1, self.depth)
+            if u == v: actions.append(a)
+            elif u >= v: v = u; actions = [a]
+
+        return random.choice(actions)
 
 def betterEvaluationFunction(currentGameState):
     """
@@ -269,6 +298,7 @@ def betterEvaluationFunction(currentGameState):
       DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
+    
     util.raiseNotDefined()
 
 # Abbreviation
