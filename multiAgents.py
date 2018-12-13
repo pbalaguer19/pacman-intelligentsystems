@@ -15,10 +15,10 @@
 from util import manhattanDistance
 from game import Directions
 import random, util
-
+import sys
 from game import Agent
 
-# Call: python pacman.py --frameTime 0.5 -p MinimaxAgent -l testClassic -a depth=4
+# Call: python pacman.py --frameTime 0.5 -p MinimaxAgent -l testClassic -a depth=2
 
 class ReflexAgent(Agent):
     """
@@ -151,54 +151,44 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
 
         "Teacher solution"
-        
-        return random.choice(gameState.getLegalActions(0))
-        #return util.raiseNotDefined()
+        ""
+        def terminalTest(gameState, depth):
+            return gameState.isWin() or gameState.isLose() or depth == 0
 
-        """
-        My solution:
-        #Used only for pacman agent hence agentindex is always 0.
-        def maxLevel(gameState,depth):
-            currDepth = depth + 1
-            if gameState.isWin() or gameState.isLose() or currDepth==self.depth:   #Terminal Test
-                return self.evaluationFunction(gameState)
-            maxvalue = -999999
-            actions = gameState.getLegalActions(0)
-            for action in actions:
-                successor= gameState.generateSuccessor(0,action)
-                maxvalue = max (maxvalue,minLevel(successor,currDepth,1))
-            return maxvalue
+        def utility(gameState):
+            return self.evaluationFunction(gameState)
 
-        #For all ghosts.
-        def minLevel(gameState,depth, agentIndex):
-            minvalue = 999999
-            if gameState.isWin() or gameState.isLose():   #Terminal Test
-                return self.evaluationFunction(gameState)
-            actions = gameState.getLegalActions(agentIndex)
-            for action in actions:
-                successor= gameState.generateSuccessor(agentIndex,action)
-                if agentIndex == (gameState.getNumAgents() - 1):
-                    minvalue = min (minvalue,maxLevel(successor,depth))
-                else:
-                    minvalue = min(minvalue,minLevel(successor,depth,agentIndex+1))
-            return minvalue
+        def result(gameState, agent, action):
+            return gameState.generateSuccessor(agent, action)
 
-        #Root level action.
-        actions = gameState.getLegalActions(0)
-        currentScore = -999999
-        returnAction = ''
-        for action in actions:
-            nextState = gameState.generateSuccessor(0,action)
-            # Next level is a min level. Hence calling min for successors of the root.
-            score = minLevel(nextState,0,1)
-            # Choosing the action which is Maximum of the successors.
-            if score > currentScore:
-                returnAction = action
-                currentScore = score
-        return returnAction
+        def max_value(gameState, agent, depth):
+            if terminalTest(gameState, depth): return utility(gameState)
 
-        #util.raiseNotDefined()
-        """
+            v = -sys.maxint
+            for a in gameState.getLegalActions(agent):
+               v = max(v, min_value(result(gameState, agent, a), 1, depth))
+            return v
+
+        def min_value(gameState, agent, depth):
+            if terminalTest(gameState, depth): return utility(gameState)
+
+            v = sys.maxint
+            for a in gameState.getLegalActions(agent):
+               if (agent == gameState.getNumAgents()-1):
+                   v = min(v, max_value(result(gameState, agent, a), 0, depth-1))
+               else:
+                   v = min(v, min_value(result(gameState, agent, a), agent+1, depth))
+            return v
+
+        v = -sys.maxint
+        actions = []
+        for a in gameState.getLegalActions(0):
+            u = min_value(result(gameState, 0, a), 1, self.depth)
+            if u == v: actions.append(a)
+            elif u >= v: v = u; actions = [a]
+
+        return random.choice(actions)
+        # util.raiseNotDefined()
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -210,7 +200,51 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def terminalTest(gameState, depth):
+            return gameState.isWin() or gameState.isLose() or depth == 0
+
+        def utility(gameState):
+            return self.evaluationFunction(gameState)
+
+        def result(gameState, agent, action):
+            return gameState.generateSuccessor(agent, action)
+
+        def max_value(gameState, agent, depth, alpha, betha):
+            if terminalTest(gameState, depth): return utility(gameState)
+
+            v = -sys.maxint
+            for a in gameState.getLegalActions(agent):
+               v = max(v, min_value(result(gameState, agent, a), 1, depth, alpha, betha))
+
+               if v > betha: return v
+               alpha = max(alpha, v)
+            return v
+
+        def min_value(gameState, agent, depth, alpha, betha):
+            if terminalTest(gameState, depth): return utility(gameState)
+
+            v = sys.maxint
+            for a in gameState.getLegalActions(agent):
+               if (agent == gameState.getNumAgents()-1):
+                   v = min(v, max_value(result(gameState, agent, a), 0, depth-1, alpha, betha))
+               else:
+                   v = min(v, min_value(result(gameState, agent, a), agent+1, depth, alpha, betha))
+
+               if v < alpha: return v
+               betha = min(betha, v)
+            return v
+
+        v = -sys.maxint
+        actions = []
+        for a in gameState.getLegalActions(0):
+            u = min_value(result(gameState, 0, a), 1, self.depth, v, sys.maxint)
+            if u == v: actions.append(a)
+            elif u >= v: v = u; actions = [a];
+
+        return random.choice(actions)
+
+        #util.raiseNotDefined()
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
