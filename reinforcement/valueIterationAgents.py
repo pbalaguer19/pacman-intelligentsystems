@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -44,8 +44,15 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.values = util.Counter() # A Counter is a dict with default 0
 
         # Write value iteration code here
-        "*** YOUR CODE HERE ***"
+        for _ in range(iterations):
+            values = util.Counter()
+            for state in self.mdp.getStates():
+                QValueForAction = util.Counter()
+                for action in self.mdp.getPossibleActions(state):
+                    QValueForAction[action] = self.computeQValueFromValues(state, action)
+                values[state] = QValueForAction[QValueForAction.argMax()]
 
+            self.values = values
 
     def getValue(self, state):
         """
@@ -59,8 +66,11 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qvalues = util.Counter()
+        for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action):
+            qvalues[nextState] = prob * (self.mdp.getReward(state, action, nextState) + (self.values[nextState]*self.discount))
+
+        return qvalues.totalCount()
 
     def computeActionFromValues(self, state):
         """
@@ -71,8 +81,13 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if self.mdp.isTerminal(state):
+            return None
+
+        QValueForAction = util.Counter()
+        for action in self.mdp.getPossibleActions(state):
+            QValueForAction[action] = self.computeQValueFromValues(state, action)
+        return QValueForAction.argMax()
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
